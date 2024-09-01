@@ -34,6 +34,7 @@ function App() {
           placeholder="Type a message..."
         />
         <button type="submit">Send</button>
+        
       </form>
     </div>
   );
