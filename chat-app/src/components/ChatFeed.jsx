@@ -1,11 +1,39 @@
+import { useEffect, useState } from 'react';
 import MyMessage from './MyMessage';
 import TheirMessage from './TheirMessage';
 import MessageForm from './MessageForm';
+import axios from 'axios';
 
-const ChatFeed = (props) => {
-  const { chats, activeChat, userName, messages } = props;
+const ChatFeed = ({ chats = [], activeChat, userName, messages = {}, setMessages }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const chat = chats && chats[activeChat];
+  // Ensure `activeChat` is valid and `chats` is an array
+  const chat = Array.isArray(chats) ? chats.find(chat => chat.id === activeChat) : null;
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (chat) {
+        try {
+          setLoading(true);
+          const { data } = await axios.get(`http://127.0.0.1:8000/api/chatrooms/${chat.id}/messages/`);
+          setMessages(data);
+          setError(null);
+        } catch (error) {
+          console.error('Error fetching messages:', error);
+          setError('Error fetching messages');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchMessages();
+  }, [chat, setMessages]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+  if (!chat) return <div>No chat found</div>;
 
   const renderReadReceipts = (message, isMyMessage) => chat.people.map((person, index) => person.last_read === message.id && (
     <div
@@ -13,7 +41,7 @@ const ChatFeed = (props) => {
       className="read-receipt"
       style={{
         float: isMyMessage ? 'right' : 'left',
-        backgroundImage: person.person.avatar && `url(${person.person.avatar})`,
+        backgroundImage: person.person.avatar ? `url(${person.person.avatar})` : 'none',
       }}
     />
   ));
@@ -41,12 +69,10 @@ const ChatFeed = (props) => {
     });
   };
 
-  if (!chat) return <div />;
-
   return (
     <div className="chat-feed">
       <div className="chat-title-container">
-        <div className="chat-title">{chat?.title}</div>
+        <div className="chat-title">{chat.title}</div>
         <div className="chat-subtitle">
           {chat.people.map((person) => ` ${person.person.username}`)}
         </div>
@@ -54,11 +80,10 @@ const ChatFeed = (props) => {
       {renderMessages()}
       <div style={{ height: '100px' }} />
       <div className="message-form-container">
-        <MessageForm {...props} chatId={activeChat} />
+        <MessageForm chatId={activeChat} />
       </div>
     </div>
   );
 };
 
 export default ChatFeed;
-
