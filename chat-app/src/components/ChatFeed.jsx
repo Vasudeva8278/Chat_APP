@@ -7,9 +7,13 @@ import axios from 'axios';
 const ChatFeed = ({ chats = [], activeChat, userName, messages = {}, setMessages }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [chat, setChat] = useState(null);
 
   // Ensure `activeChat` is valid and `chats` is an array
-  const chat = Array.isArray(chats) ? chats.find(chat => chat.id === activeChat) : null;
+  useEffect(() => {
+    const currentChat = Array.isArray(chats) ? chats.find(chat => chat.id === activeChat) : null;
+    setChat(currentChat);
+  }, [chats, activeChat]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -30,6 +34,12 @@ const ChatFeed = ({ chats = [], activeChat, userName, messages = {}, setMessages
 
     fetchMessages();
   }, [chat, setMessages]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('username');
+    localStorage.removeItem('password');
+    window.location.reload();
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -76,6 +86,7 @@ const ChatFeed = ({ chats = [], activeChat, userName, messages = {}, setMessages
         <div className="chat-subtitle">
           {chat.people.map((person) => ` ${person.person.username}`)}
         </div>
+        <button onClick={handleLogout} className="logout-button">Logout</button>
       </div>
       {renderMessages()}
       <div style={{ height: '100px' }} />
